@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import TodoItem from '@/components/TodoItem';
 import { Todo, FilterType, Priority } from '@/types/todo';
+import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Home() {
   const [todos, setTodos] = useState<Todo[]>([]);
@@ -107,7 +108,8 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <ThemeToggle />
       <div className="max-w-4xl mx-auto p-4 sm:p-6 lg:p-8">
         <h1 className="text-3xl font-bold text-center mb-8 text-gray-800 dark:text-white">
           Todo App
