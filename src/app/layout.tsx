@@ -17,10 +17,18 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={`preload ${inter.className}`}>
         <ThemeProvider>
           {children}
         </ThemeProvider>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            // Remove preload class after page load to enable transitions
+            window.addEventListener('load', () => {
+              document.body.classList.remove('preload');
+            });
+          `
+        }} />
       </body>
     </html>
   );

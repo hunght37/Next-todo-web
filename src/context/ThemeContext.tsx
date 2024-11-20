@@ -15,19 +15,39 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [theme, setTheme] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
+  // Handle system theme changes
   useEffect(() => {
-    // Set mounted to handle client-side hydration
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    
+    const handleChange = (e: MediaQueryListEvent) => {
+      const systemTheme = e.matches ? 'dark' : 'light';
+      // Only update if user hasn't set a preference
+      if (!localStorage.getItem('theme')) {
+        setTheme(systemTheme);
+      }
+    };
+
+    mediaQuery.addEventListener('change', handleChange);
+    return () => mediaQuery.removeEventListener('change', handleChange);
+  }, []);
+
+  useEffect(() => {
     setMounted(true);
     
     try {
-      // Check local storage or system preference
       const savedTheme = localStorage.getItem('theme') as Theme;
       const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      setTheme(savedTheme || systemTheme);
+      
+      // Use saved theme if exists, otherwise use system theme
+      const initialTheme = savedTheme || systemTheme;
+      setTheme(initialTheme);
+      
+      // Apply theme immediately to prevent flash
+      document.documentElement.classList.add(initialTheme);
     } catch (error) {
       console.error('Error accessing theme preferences:', error);
-      // Fallback to light theme if there's an error
       setTheme('light');
+      document.documentElement.classList.add('light');
     }
   }, []);
 
@@ -35,17 +55,24 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     if (!mounted) return;
 
     try {
-      // Update document class and local storage when theme changes
-      document.documentElement.classList.remove('light', 'dark');
-      document.documentElement.classList.add(theme);
-      localStorage.setItem('theme', theme);
+      const root = document.documentElement;
+      root.classList.remove('light', 'dark');
+      root.classList.add(theme);
+      
+      // Only save to localStorage if explicitly set by user
+      if (mounted) {
+        localStorage.setItem('theme', theme);
+      }
     } catch (error) {
       console.error('Error saving theme preference:', error);
     }
   }, [theme, mounted]);
 
   const toggleTheme = () => {
-    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+    setTheme(prevTheme => {
+      const newTheme = prevTheme === 'light' ? 'dark' : 'light';
+      return newTheme;
+    });
   };
 
   // Prevent flash of incorrect theme
