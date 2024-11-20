@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import { Todo } from '@/types/todo';
 import { Dialog } from '@headlessui/react';
 import { XMarkIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
@@ -24,7 +24,6 @@ export default function TodoItem({
   onToggleSubtask,
   onDeleteSubtask,
 }: TodoItemProps) {
-  const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(todo.title);
   const [editedDescription, setEditedDescription] = useState(todo.description || '');
   const [editedPriority, setEditedPriority] = useState(todo.priority);
