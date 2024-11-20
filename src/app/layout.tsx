@@ -1,13 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "@/context/ThemeContext";
+import ClientLayout from "@/components/ClientLayout";
 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Todo App",
-  description: "A modern todo application with dark mode support",
+  description: "A simple todo app built with Next.js",
 };
 
 export default function RootLayout({
@@ -16,19 +16,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={`preload ${inter.className}`}>
-        <ThemeProvider>
-          {children}
-        </ThemeProvider>
-        <script dangerouslySetInnerHTML={{
-          __html: `
-            // Remove preload class after page load to enable transitions
-            window.addEventListener('load', () => {
-              document.body.classList.remove('preload');
-            });
-          `
-        }} />
+    <html lang="en">
+      <body className={inter.className}>
+        <ClientLayout>{children}</ClientLayout>
       </body>
     </html>
   );
