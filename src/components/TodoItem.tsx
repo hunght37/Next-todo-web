@@ -1,5 +1,9 @@
+'use client';
+
 import { useState, useRef, useEffect } from 'react';
 import { Todo } from '@/types/todo';
+import { Dialog } from '@headlessui/react';
+import { XMarkIcon, PencilIcon, TrashIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 interface TodoItemProps {
   todo: Todo;
@@ -23,35 +27,19 @@ export default function TodoItem({
   const [isEditing, setIsEditing] = useState(false);
   const [editedTitle, setEditedTitle] = useState(todo.title);
   const [editedDescription, setEditedDescription] = useState(todo.description || '');
-  const [showSubtasks, setShowSubtasks] = useState(false);
+  const [editedPriority, setEditedPriority] = useState(todo.priority);
+  const [editedDeadline, setEditedDeadline] = useState(todo.deadline || '');
   const [newSubtask, setNewSubtask] = useState('');
-  const editInputRef = useRef<HTMLInputElement>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  useEffect(() => {
-    if (isEditing) {
-      editInputRef.current?.focus();
-    }
-  }, [isEditing]);
-
-  const handleEdit = () => {
-    if (editedTitle.trim()) {
-      onUpdate(todo.id, {
-        title: editedTitle,
-        description: editedDescription,
-      });
-      setIsEditing(false);
-    }
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleEdit();
-    } else if (e.key === 'Escape') {
-      setIsEditing(false);
-      setEditedTitle(todo.title);
-      setEditedDescription(todo.description || '');
-    }
+  const handleSave = () => {
+    onUpdate(todo.id, {
+      title: editedTitle,
+      description: editedDescription,
+      priority: editedPriority,
+      deadline: editedDeadline,
+    });
+    setIsEditDialogOpen(false);
   };
 
   const handleAddSubtask = (e: React.FormEvent) => {
@@ -62,162 +50,218 @@ export default function TodoItem({
     }
   };
 
-  const completedSubtasks = todo.subtasks?.filter(st => st.completed).length || 0;
-  const totalSubtasks = todo.subtasks?.length || 0;
+  const completedSubtasks = todo.subtasks.filter(st => st.completed).length;
+  const totalSubtasks = todo.subtasks.length;
   const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 border border-gray-200 dark:border-gray-700 group">
-      <div className="p-4">
-        <div className="flex items-center justify-between mb-2">
-          {isEditing ? (
+    <>
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-4 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start space-x-3 flex-1">
             <input
-              ref={editInputRef}
-              type="text"
-              value={editedTitle}
-              onChange={(e) => setEditedTitle(e.target.value)}
-              onKeyDown={handleKeyDown}
-              className="flex-1 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+              type="checkbox"
+              checked={todo.completed}
+              onChange={() => onToggle(todo.id)}
+              className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
-          ) : (
-            <div className="flex items-center space-x-2 flex-1">
-              <input
-                type="checkbox"
-                checked={todo.completed}
-                onChange={() => onToggle(todo.id)}
-                className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-              />
-              <h3 className={`font-medium ${todo.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-900 dark:text-white'}`}>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
                 {todo.title}
               </h3>
+              {todo.description && (
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
+                  {todo.description}
+                </p>
+              )}
+              <div className="mt-2 flex flex-wrap gap-2">
+                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                  todo.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
+                  todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
+                  'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                }`}>
+                  {todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1)} Priority
+                </span>
+                {todo.deadline && (
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                    Due: {new Date(todo.deadline).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
             </div>
-          )}
-          
-          <div className="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              aria-label={isEditing ? "Save" : "Edit"}
-            >
-              <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-            </button>
-            <button
-              onClick={() => setShowSubtasks(!showSubtasks)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-              aria-label="Toggle subtasks"
-            >
-              <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-            <button
-              onClick={() => onDelete(todo.id)}
-              className="p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-red-600 dark:text-red-400"
-              aria-label="Delete task"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => setIsEditDialogOpen(true)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <PencilIcon className="h-5 w-5" />
+              </button>
+              <button
+                onClick={() => onDelete(todo.id)}
+                className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+              >
+                <TrashIcon className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {isEditing ? (
-          <textarea
-            value={editedDescription}
-            onChange={(e) => setEditedDescription(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="w-full mt-2 rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-            rows={2}
-            placeholder="Add a description..."
-          />
-        ) : (
-          todo.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-300">{todo.description}</p>
-          )
-        )}
-
-        {/* Progress bar for subtasks */}
-        {totalSubtasks > 0 && (
-          <div className="mt-3">
-            <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1">
-              <span>{completedSubtasks} of {totalSubtasks} subtasks completed</span>
-              <span>{Math.round(progress)}%</span>
+        {/* Subtasks Section */}
+        {(todo.subtasks.length > 0 || newSubtask) && (
+          <div className="mt-4 space-y-3">
+            {/* Progress Bar */}
+            <div className="space-y-1">
+              <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                <div
+                  className="h-full bg-blue-600 rounded-full transition-all duration-300"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                {completedSubtasks} of {totalSubtasks} subtasks complete
+              </p>
             </div>
-            <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
-              <div
-                className="h-full bg-blue-600 dark:bg-blue-500 transition-all duration-300"
-                style={{ width: `${progress}%` }}
-              />
-            </div>
-          </div>
-        )}
 
-        <div className="mt-4 flex items-center justify-between">
-          <span className={`inline-flex items-center px-2 py-1 rounded text-xs font-medium
-            ${todo.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-              todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'}`}
-          >
-            {todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1)} Priority
-          </span>
-          {todo.deadline && (
-            <span className="text-sm text-gray-500 dark:text-gray-400">
-              Due {new Date(todo.deadline).toLocaleDateString()}
-            </span>
-          )}
-        </div>
+            {/* Subtasks List */}
+            <ul className="space-y-2">
+              {todo.subtasks.map(subtask => (
+                <li key={subtask.id} className="flex items-center space-x-3">
+                  <input
+                    type="checkbox"
+                    checked={subtask.completed}
+                    onChange={() => onToggleSubtask(todo.id, subtask.id)}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className={`flex-1 text-sm ${subtask.completed ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}>
+                    {subtask.title}
+                  </span>
+                  <button
+                    onClick={() => onDeleteSubtask(todo.id, subtask.id)}
+                    className="text-gray-400 hover:text-red-500 dark:hover:text-red-400"
+                  >
+                    <XMarkIcon className="h-4 w-4" />
+                  </button>
+                </li>
+              ))}
+            </ul>
 
-        {/* Subtasks section */}
-        {showSubtasks && (
-          <div className="mt-4 space-y-2">
-            <form onSubmit={handleAddSubtask} className="flex gap-2">
+            {/* Add Subtask Form */}
+            <form onSubmit={handleAddSubtask} className="flex items-center space-x-2">
               <input
                 type="text"
                 value={newSubtask}
                 onChange={(e) => setNewSubtask(e.target.value)}
-                placeholder="Add a subtask"
-                className="flex-1 text-sm rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
+                placeholder="Add a subtask..."
+                className="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white text-sm"
               />
               <button
                 type="submit"
-                className="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="inline-flex items-center p-1.5 border border-transparent rounded-full shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                Add
+                <PlusIcon className="h-4 w-4" />
               </button>
             </form>
-            
-            <div className="space-y-2 mt-2">
-              {todo.subtasks?.map((subtask) => (
-                <div key={subtask.id} className="flex items-center justify-between group/subtask">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      checked={subtask.completed}
-                      onChange={() => onToggleSubtask(todo.id, subtask.id)}
-                      className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                    />
-                    <span className={`text-sm ${subtask.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-700 dark:text-gray-300'}`}>
-                      {subtask.title}
-                    </span>
-                  </div>
-                  <button
-                    onClick={() => onDeleteSubtask(todo.id, subtask.id)}
-                    className="opacity-0 group-hover/subtask:opacity-100 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded text-red-600 dark:text-red-400"
-                    aria-label="Delete subtask"
-                  >
-                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                  </button>
-                </div>
-              ))}
-            </div>
           </div>
         )}
       </div>
-    </div>
+
+      {/* Edit Dialog */}
+      <Dialog
+        open={isEditDialogOpen}
+        onClose={() => setIsEditDialogOpen(false)}
+        className="relative z-50"
+      >
+        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
+
+        <div className="fixed inset-0 flex items-center justify-center p-4">
+          <Dialog.Panel className="relative bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
+            <div className="absolute top-4 right-4">
+              <button
+                onClick={() => setIsEditDialogOpen(false)}
+                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
+              >
+                <XMarkIcon className="h-6 w-6" />
+              </button>
+            </div>
+
+            <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Edit Task
+            </Dialog.Title>
+
+            <div className="space-y-4">
+              <div>
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  value={editedTitle}
+                  onChange={(e) => setEditedTitle(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Description
+                </label>
+                <textarea
+                  id="description"
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  rows={3}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Priority
+                </label>
+                <select
+                  id="priority"
+                  value={editedPriority}
+                  onChange={(e) => setEditedPriority(e.target.value as Todo['priority'])}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Deadline
+                </label>
+                <input
+                  type="date"
+                  id="deadline"
+                  value={editedDeadline}
+                  onChange={(e) => setEditedDeadline(e.target.value)}
+                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleSave}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  Save Changes
+                </button>
+              </div>
+            </div>
+          </Dialog.Panel>
+        </div>
+      </Dialog>
+    </>
   );
 }
