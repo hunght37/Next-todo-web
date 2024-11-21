@@ -7,48 +7,73 @@ export default async function handler(
 ) {
   const { id } = req.query;
 
-  if (typeof id !== 'string') {
-    return res.status(400).json({ error: 'Invalid task ID' });
-  }
-
   try {
-    // Check if task exists
-    const task = await prisma.task.findUnique({
-      where: { id }
-    });
-
-    if (!task) {
-      return res.status(404).json({ error: 'Task not found' });
-    }
-
     switch (req.method) {
-      case 'GET':
+      case 'GET': {
+        const task = await prisma.task.findUnique({
+          where: { id: String(id) },
+        });
+
+        if (!task) {
+          return res.status(404).json({ message: 'Task not found' });
+        }
+
         return res.status(200).json(task);
+      }
 
-      case 'PUT':
+      case 'PUT': {
+        const { title, description } = req.body;
+
+        const task = await prisma.task.findUnique({
+          where: { id: String(id) },
+        });
+
+        if (!task) {
+          return res.status(404).json({ message: 'Task not found' });
+        }
+
         const updatedTask = await prisma.task.update({
-          where: { id },
+          where: { id: String(id) },
           data: {
-            title: req.body.title,
-            description: req.body.description,
-            completed: req.body.completed
-          }
+            title,
+            description,
+          },
         });
-        return res.status(200).json(updatedTask);
 
-      case 'DELETE':
-        await prisma.task.delete({
-          where: { id }
+        return res.status(200).json(updatedTask);
+      }
+
+      case 'DELETE': {
+        const task = await prisma.task.findUnique({
+          where: { id: String(id) },
         });
+
+        if (!task) {
+          return res.status(404).json({ message: 'Task not found' });
+        }
+
+        await prisma.task.delete({
+          where: { id: String(id) },
+        });
+
         return res.status(204).end();
+      }
 
       case 'PATCH':
         if (req.url?.endsWith('/toggle')) {
+          const task = await prisma.task.findUnique({
+            where: { id: String(id) },
+          });
+
+          if (!task) {
+            return res.status(404).json({ message: 'Task not found' });
+          }
+
           const toggledTask = await prisma.task.update({
-            where: { id },
+            where: { id: String(id) },
             data: {
-              completed: !task.completed
-            }
+              completed: !task.completed,
+            },
           });
           return res.status(200).json(toggledTask);
         }
@@ -56,7 +81,7 @@ export default async function handler(
 
       default:
         res.setHeader('Allow', ['GET', 'PUT', 'DELETE', 'PATCH']);
-        return res.status(405).end(`Method ${req.method} Not Allowed`);
+        return res.status(405).json({ message: `Method ${req.method} Not Allowed` });
     }
   } catch (error) {
     console.error('Request error', error);
