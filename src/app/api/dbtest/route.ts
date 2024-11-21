@@ -25,12 +25,12 @@ export async function GET() {
       created: testTodo,
       retrieved: retrievedTodo
     });
-  } catch (error) {
+  } catch (error: any) {
     console.error("Test failed:", error);
     return NextResponse.json({ 
       error: 'Test failed', 
-      details: error,
-      message: error.message 
+      details: error instanceof Error ? error.message : String(error),
+      message: error instanceof Error ? error.message : 'An unknown error occurred'
     }, { status: 500 });
   }
 }
