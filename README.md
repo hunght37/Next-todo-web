@@ -1,36 +1,109 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Next.js Todo Web Application
+
+A modern todo application built with Next.js, MongoDB, and Tailwind CSS.
+
+## Features
+
+- Create, Read, Update, and Delete todos
+- Responsive design with Tailwind CSS
+- Real-time updates
+- MongoDB database integration
+- Server-side rendering with Next.js
+- Modern UI with Headless UI and Heroicons
+
+## Tech Stack
+
+- **Frontend**: Next.js 14, React 18, Tailwind CSS
+- **Backend**: Next.js API Routes
+- **Database**: MongoDB with Mongoose
+- **UI Components**: Headless UI, Heroicons
+- **Charts**: Chart.js with react-chartjs-2
+- **Type Safety**: TypeScript
+- **Form Validation**: Zod
+
+## Prerequisites
+
+Before you begin, ensure you have the following installed:
+- Node.js (v18 or higher)
+- npm or yarn
+- MongoDB Atlas account
 
 ## Getting Started
 
-First, run the development server:
-
+1. Clone the repository:
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/hunght37/Next-todo-web.git
+cd Next-todo-web
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. Install dependencies:
+```bash
+npm install
+```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+3. Set up environment variables:
+Create a `.env` file in the root directory and add:
+```
+DATABASE_URL="your_mongodb_connection_string"
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+4. Run the development server:
+```bash
+npm run dev
+```
 
-## Learn More
+5. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-To learn more about Next.js, take a look at the following resources:
+## Project Structure
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```
+Next-todo-web/
+├── src/
+│   ├── app/             # Next.js app directory
+│   │   ├── api/        # API routes
+│   │   └── ...         # Page components
+│   ├── lib/            # Utility functions and database connection
+│   └── models/         # Mongoose models
+├── public/             # Static files
+└── ...                 # Config files
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## API Routes
 
-## Deploy on Vercel
+- `GET /api/todos` - Get all todos
+- `POST /api/todos` - Create a new todo
+- `GET /api/todos/[id]` - Get a specific todo
+- `PUT /api/todos/[id]` - Update a todo
+- `DELETE /api/todos/[id]` - Delete a todo
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Environment Variables
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- `DATABASE_URL`: MongoDB connection string
+
+## Deployment
+
+The application can be deployed on Vercel:
+
+1. Push your code to GitHub
+2. Import your repository to Vercel
+3. Add environment variables in Vercel project settings
+4. Deploy!
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Acknowledgments
+
+- Next.js team for the amazing framework
+- Vercel for the deployment platform
+- MongoDB team for the database
+- All contributors and users of this project
