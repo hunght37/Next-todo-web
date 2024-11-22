@@ -18,12 +18,19 @@ export default function HomeContent() {
 
   const fetchTodos = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/todos');
-      if (!response.ok) throw new Error('Failed to fetch todos');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || errorData.error || 'Failed to fetch todos');
+      }
       const data = await response.json();
-      setTodos(data.todos || []); // Extract the todos array from the response
+      setTodos(data.todos || []);
+      setError(null);
     } catch (err) {
+      console.error('Error fetching todos:', err);
       setError(err instanceof Error ? err.message : 'Failed to fetch todos');
+      setTodos([]);
     } finally {
       setLoading(false);
     }

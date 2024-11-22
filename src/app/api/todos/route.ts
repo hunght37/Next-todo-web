@@ -58,25 +58,32 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         where,
         skip,
         take: limit,
-        orderBy: { createdAt: 'desc' },
+        orderBy: { updatedAt: 'desc' },
       }),
       prisma.task.count({ where }),
     ]);
 
+    const totalPages = Math.ceil(total / limit);
     const response: TodosResponse = {
       todos,
       total,
       page,
-      totalPages: Math.ceil(total / limit),
+      totalPages,
     };
 
     // Cache the response
-    await redis.set(cacheKey, JSON.stringify(response), 'EX', 60); // Cache for 60 seconds
+    await redis.set(cacheKey, JSON.stringify(response), 'EX', 60);
 
     return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching todos:', error);
-    return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 });
+    console.error('Error in GET /api/todos:', error);
+    return NextResponse.json(
+      {
+        error: 'Internal Server Error',
+        details: error instanceof Error ? error.message : 'Unknown error',
+      },
+      { status: 500 }
+    );
   }
 }
 

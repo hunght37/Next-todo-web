@@ -1,24 +1,22 @@
 import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import Todo from '@/models/Todo';
+import { PrismaClient } from '@prisma/client';
+
+const prisma = new PrismaClient();
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    await dbConnect();
-    const todo = await Todo.findById(params.id);
-    if (!todo) {
-      return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
+    const task = await prisma.task.findUnique({
+      where: { id: params.id },
+    });
+
+    if (!task) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
     }
 
-    const transformedTodo = {
-      ...todo.toObject(),
-      id: todo._id.toString(),
-      _id: undefined,
-    };
-    return NextResponse.json(transformedTodo);
+    return NextResponse.json(task);
   } catch (error: unknown) {
     return NextResponse.json(
       {
@@ -36,23 +34,16 @@ export async function PUT(
 ): Promise<NextResponse> {
   try {
     const body = await request.json();
-    await dbConnect();
-    const todo = await Todo.findByIdAndUpdate(params.id, body, {
-      new: true,
-      runValidators: true,
+    const task = await prisma.task.update({
+      where: { id: params.id },
+      data: body,
     });
 
-    if (!todo) {
-      return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
-    }
-
-    const transformedTodo = {
-      ...todo.toObject(),
-      id: todo._id.toString(),
-      _id: undefined,
-    };
-    return NextResponse.json(transformedTodo);
+    return NextResponse.json(task);
   } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('Record to update not found')) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
     return NextResponse.json(
       {
         error: 'Internal Server Error',
@@ -68,13 +59,15 @@ export async function DELETE(
   { params }: { params: { id: string } }
 ): Promise<NextResponse> {
   try {
-    await dbConnect();
-    const todo = await Todo.findByIdAndDelete(params.id);
-    if (!todo) {
-      return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
-    }
-    return NextResponse.json({ message: 'Todo deleted successfully' });
+    await prisma.task.delete({
+      where: { id: params.id },
+    });
+
+    return NextResponse.json({ message: 'Task deleted successfully' });
   } catch (error: unknown) {
+    if (error instanceof Error && error.message.includes('Record to delete does not exist')) {
+      return NextResponse.json({ error: 'Task not found' }, { status: 404 });
+    }
     return NextResponse.json(
       {
         error: 'Internal Server Error',
