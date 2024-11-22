@@ -76,7 +76,7 @@ export default function StatisticsContent() {
         text: 'Task Overview',
         font: {
           size: 16,
-          weight: 'bold',
+          weight: 'bold' as const,
         },
       },
     },
@@ -101,7 +101,7 @@ export default function StatisticsContent() {
         text: 'Task Distribution',
         font: {
           size: 16,
-          weight: 'bold',
+          weight: 'bold' as const,
         },
       },
     },

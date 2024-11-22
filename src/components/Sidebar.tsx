@@ -22,7 +22,7 @@ export default function Sidebar({ isOpen }: SidebarProps) {
   if (!isOpen) return null;
 
   return (
-    <div className="w-64 bg-white border-r h-screen fixed left-0 top-16">
+    <aside className="w-64 bg-white border-r h-full">
       <nav className="p-4">
         {navItems.map((item) => {
           const Icon = item.icon;
@@ -41,6 +41,6 @@ export default function Sidebar({ isOpen }: SidebarProps) {
           );
         })}
       </nav>
-    </div>
+    </aside>
   );
 }

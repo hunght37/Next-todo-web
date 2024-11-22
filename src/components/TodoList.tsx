@@ -6,12 +6,13 @@ import { Trash2, Edit2, Check, X, Star, Calendar } from 'lucide-react';
 
 interface TodoListProps {
   todos: Todo[];
+  loading?: boolean;
   onUpdate: (id: string, todo: Partial<Todo>) => void;
   onDelete: (id: string) => void;
   viewMode: 'list' | 'grid';
 }
 
-export default function TodoList({ todos, onUpdate, onDelete, viewMode }: TodoListProps) {
+export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading }: TodoListProps) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editText, setEditText] = useState('');
 
@@ -31,6 +32,14 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode }: TodoLi
     }
     cancelEdit();
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
 
   if (viewMode === 'list') {
     return (

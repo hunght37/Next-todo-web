@@ -70,11 +70,11 @@ export default function HomeContent() {
   };
 
   return (
-    <main className="container mx-auto p-4">
-      <div className="mb-8">
+    <div className="space-y-6">
+      <div>
         <TodoForm onSubmit={handleAddTodo} />
       </div>
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Todo List</h2>
         <div className="flex gap-2">
           <button
@@ -95,14 +95,16 @@ export default function HomeContent() {
           </button>
         </div>
       </div>
-      {error && <div className="text-red-500 mb-4">{error}</div>}
-      <TodoList
-        todos={todos}
-        loading={loading}
-        onUpdate={handleUpdateTodo}
-        onDelete={handleDeleteTodo}
-        viewMode={viewMode}
-      />
-    </main>
+      {error && <div className="text-red-500">{error}</div>}
+      <div>
+        <TodoList
+          todos={todos}
+          loading={loading}
+          onUpdate={handleUpdateTodo}
+          onDelete={handleDeleteTodo}
+          viewMode={viewMode}
+        />
+      </div>
+    </div>
   );
 }
