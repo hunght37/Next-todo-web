@@ -6,6 +6,11 @@ import { getRedisClient } from '@/lib/redis';
 const prisma = new PrismaClient();
 const redis = getRedisClient();
 
+// Helper function to validate TaskStatus
+const isValidTaskStatus = (status: string): status is TaskStatus => {
+  return Object.values(TaskStatus).includes(status as TaskStatus);
+};
+
 // Helper function to invalidate cache
 const invalidateCache = async (): Promise<void> => {
   const keys = await redis.keys('todos:*');
@@ -20,7 +25,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') as TaskStatus | undefined;
+    const statusParam = searchParams.get('status');
     const priority = searchParams.get('priority');
 
     const skip = (page - 1) * limit;
@@ -33,15 +38,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }
-    if (status && Object.values(TaskStatus).includes(status)) {
-      where.status = status;
+    if (statusParam && isValidTaskStatus(statusParam)) {
+      where.status = statusParam;
     }
     if (priority) {
       where.priority = parseInt(priority);
     }
 
     // Try to get from cache first
-    const cacheKey = `todos:${page}:${limit}:${search}:${status}:${priority}`;
+    const cacheKey = `todos:${page}:${limit}:${search}:${statusParam}:${priority}`;
     const cachedData = await redis.get(cacheKey);
     if (cachedData) {
       return NextResponse.json(JSON.parse(cachedData));
@@ -77,18 +82,22 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const body = await request.json();
-    const { title, description, status, priority } = body;
+    const { title, description, status, priority } = await request.json();
 
     if (!title) {
       return NextResponse.json({ error: 'Title is required' }, { status: 400 });
+    }
+
+    // Validate status if provided
+    if (status && !isValidTaskStatus(status)) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
     }
 
     const todo = await prisma.task.create({
       data: {
         title,
         description,
-        status: status as TaskStatus,
+        status: status && isValidTaskStatus(status) ? status : TaskStatus.PENDING,
         priority: priority ?? 0,
       },
     });
@@ -105,11 +114,15 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
 export async function PUT(request: NextRequest): Promise<NextResponse> {
   try {
-    const body = await request.json();
-    const { id, title, description, status, priority } = body;
+    const { id, title, description, status, priority } = await request.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Todo ID is required' }, { status: 400 });
+    }
+
+    // Validate status if provided
+    if (status && !isValidTaskStatus(status)) {
+      return NextResponse.json({ error: 'Invalid status value' }, { status: 400 });
     }
 
     const todo = await prisma.task.update({
@@ -117,7 +130,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       data: {
         title,
         description,
-        status: status as TaskStatus,
+        status: status && isValidTaskStatus(status) ? status : undefined,
         priority,
       },
     });
