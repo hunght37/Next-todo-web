@@ -46,5 +46,5 @@ export const TaskAPI = {
   toggleTaskCompletion: async (id: string): Promise<Task> => {
     const response = await axios.patch(`${API_URL}/${id}/toggle`);
     return response.data;
-  }
+  },
 };

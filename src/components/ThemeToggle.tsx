@@ -17,14 +17,18 @@ export default function ThemeToggle() {
       aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
     >
       <div className="relative w-6 h-6">
-        <div className={`absolute inset-0 transform transition-transform duration-500 ${
-          theme === 'light' ? 'rotate-0 opacity-100' : 'rotate-90 opacity-0'
-        }`}>
+        <div
+          className={`absolute inset-0 transform transition-transform duration-500 ${
+            theme === 'light' ? 'rotate-0 opacity-100' : 'rotate-90 opacity-0'
+          }`}
+        >
           <SunIcon className="w-6 h-6 text-yellow-500" />
         </div>
-        <div className={`absolute inset-0 transform transition-transform duration-500 ${
-          theme === 'dark' ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'
-        }`}>
+        <div
+          className={`absolute inset-0 transform transition-transform duration-500 ${
+            theme === 'dark' ? 'rotate-0 opacity-100' : '-rotate-90 opacity-0'
+          }`}
+        >
           <MoonIcon className="w-6 h-6 text-blue-300" />
         </div>
       </div>

@@ -50,7 +50,7 @@ export default function TodoItem({
   };
 
   const subtasks = todo.subtasks || [];
-  const completedSubtasks = subtasks.filter(st => st.completed).length;
+  const completedSubtasks = subtasks.filter((st) => st.completed).length;
   const totalSubtasks = subtasks.length;
   const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
   return (
@@ -65,21 +65,23 @@ export default function TodoItem({
               className="mt-1 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
             />
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">
-                {todo.title}
-              </h3>
+              <h3 className="text-lg font-semibold text-gray-800 dark:text-white">{todo.title}</h3>
               {todo.description && (
-                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">
-                  {todo.description}
-                </p>
+                <p className="mt-1 text-sm text-gray-600 dark:text-gray-300">{todo.description}</p>
               )}
               <div className="mt-2 flex flex-wrap gap-2">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  todo.priority === 'high' ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200' :
-                  todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
-                  'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                }`}>
-                  {(todo.priority || 'medium').charAt(0).toUpperCase() + (todo.priority || 'medium').slice(1)} Priority
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    todo.priority === 'high'
+                      ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
+                      : todo.priority === 'medium'
+                        ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+                        : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+                  }`}
+                >
+                  {(todo.priority || 'medium').charAt(0).toUpperCase() +
+                    (todo.priority || 'medium').slice(1)}{' '}
+                  Priority
                 </span>
                 {todo.deadline && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -107,7 +109,7 @@ export default function TodoItem({
 
         {/* Subtasks Section */}
         {((todo.subtasks || []).length > 0 || newSubtask) && (
-                 <div className="mt-4 space-y-3">
+          <div className="mt-4 space-y-3">
             {/* Progress Bar */}
             <div className="space-y-1">
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
@@ -123,7 +125,7 @@ export default function TodoItem({
 
             {/* Subtasks List */}
             <ul className="space-y-2">
-              {todo.subtasks.map(subtask => (
+              {todo.subtasks.map((subtask) => (
                 <li key={subtask.id} className="flex items-center space-x-3">
                   <input
                     type="checkbox"
@@ -131,7 +133,9 @@ export default function TodoItem({
                     onChange={() => onToggleSubtask(todo.id, subtask.id)}
                     className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
-                  <span className={`flex-1 text-sm ${subtask.completed ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}>
+                  <span
+                    className={`flex-1 text-sm ${subtask.completed ? 'text-gray-500 dark:text-gray-400 line-through' : 'text-gray-700 dark:text-gray-300'}`}
+                  >
                     {subtask.title}
                   </span>
                   <button
@@ -189,7 +193,10 @@ export default function TodoItem({
 
             <div className="space-y-4">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="title"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Title
                 </label>
                 <input
@@ -202,7 +209,10 @@ export default function TodoItem({
               </div>
 
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="description"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Description
                 </label>
                 <textarea
@@ -215,7 +225,10 @@ export default function TodoItem({
               </div>
 
               <div>
-                <label htmlFor="priority" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="priority"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Priority
                 </label>
                 <select
@@ -231,7 +244,10 @@ export default function TodoItem({
               </div>
 
               <div>
-                <label htmlFor="deadline" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label
+                  htmlFor="deadline"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
                   Deadline
                 </label>
                 <input

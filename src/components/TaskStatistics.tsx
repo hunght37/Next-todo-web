@@ -12,15 +12,7 @@ import {
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Task } from '@/types/task';
 
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  BarElement,
-  Title,
-  Tooltip,
-  Legend,
-  ArcElement
-);
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 interface TaskStats {
   total: number;
@@ -58,11 +50,7 @@ export default function TaskStatistics({ tasks }: { tasks: Task[] }) {
           'rgba(75, 192, 192, 0.5)',
           'rgba(255, 206, 86, 0.5)',
         ],
-        borderColor: [
-          'rgba(54, 162, 235, 1)',
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-        ],
+        borderColor: ['rgba(54, 162, 235, 1)', 'rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)'],
         borderWidth: 1,
       },
     ],
@@ -73,14 +61,8 @@ export default function TaskStatistics({ tasks }: { tasks: Task[] }) {
     datasets: [
       {
         data: [stats.completed, stats.inProgress],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.5)',
-          'rgba(255, 206, 86, 0.5)',
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 206, 86, 1)',
-        ],
+        backgroundColor: ['rgba(75, 192, 192, 0.5)', 'rgba(255, 206, 86, 0.5)'],
+        borderColor: ['rgba(75, 192, 192, 1)', 'rgba(255, 206, 86, 1)'],
         borderWidth: 1,
       },
     ],

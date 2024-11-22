@@ -40,11 +40,7 @@ export function TodoProvider({ children }: { children: React.ReactNode }) {
   };
 
   const updateTask = (taskId: string, updatedTask: Partial<Task>) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId ? { ...task, ...updatedTask } : task
-      )
-    );
+    setTasks(tasks.map((task) => (task.id === taskId ? { ...task, ...updatedTask } : task)));
   };
 
   const deleteTask = (taskId: string) => {
