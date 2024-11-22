@@ -27,7 +27,7 @@ export default function StatisticsContent() {
         const response = await fetch('/api/todos');
         if (!response.ok) throw new Error('Failed to fetch todos');
         const data = await response.json();
-        setTodos(data);
+        setTodos(data.todos);
       } catch (error) {
         console.error('Error fetching todos:', error);
       } finally {

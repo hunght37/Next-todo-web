@@ -3,9 +3,12 @@
 import { useState } from 'react';
 import { Plus } from 'lucide-react';
 import type { Todo } from '@/types/todo';
+import { TaskStatus } from '@prisma/client';
+
+type TodoInput = Pick<Todo, 'title' | 'description' | 'status' | 'priority' | 'completed'>;
 
 interface TodoFormProps {
-  onSubmit: (todo: Omit<Todo, 'id'>) => void;
+  onSubmit: (todo: TodoInput) => void;
 }
 
 export default function TodoForm({ onSubmit }: TodoFormProps) {
@@ -15,10 +18,11 @@ export default function TodoForm({ onSubmit }: TodoFormProps) {
     e.preventDefault();
     if (text.trim()) {
       onSubmit({
-        text: text.trim(),
+        title: text.trim(),
+        description: '',
         completed: false,
-        important: false,
-        createdAt: new Date().toISOString(),
+        status: TaskStatus.PENDING,
+        priority: 0,
       });
       setText('');
     }

@@ -21,7 +21,7 @@ export default function HomeContent() {
       const response = await fetch('/api/todos');
       if (!response.ok) throw new Error('Failed to fetch todos');
       const data = await response.json();
-      setTodos(data);
+      setTodos(data.todos || []); // Extract the todos array from the response
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to fetch todos');
     } finally {
@@ -29,7 +29,9 @@ export default function HomeContent() {
     }
   };
 
-  const handleAddTodo = async (newTodo: Omit<Todo, 'id'>) => {
+  const handleAddTodo = async (
+    newTodo: Pick<Todo, 'title' | 'description' | 'status' | 'priority' | 'completed'>
+  ) => {
     try {
       const response = await fetch('/api/todos', {
         method: 'POST',

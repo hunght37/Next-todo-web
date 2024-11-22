@@ -1,9 +1,22 @@
+import { Prisma, TaskStatus } from '@prisma/client';
+
 export interface Todo {
   id: string;
-  text: string;
+  title: string;
+  description: string | null;
+  status: TaskStatus;
+  priority: number;
   completed: boolean;
-  important: boolean;
-  createdAt: string;
+  createdAt: Date;
+  updatedAt: Date;
+  userId: string | null;
 }
 
-export type FilterType = 'all' | 'active' | 'completed';
+export interface TodosResponse {
+  todos: Todo[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+export type WhereClause = Prisma.TaskWhereInput;

@@ -1,65 +1,156 @@
-import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import Todo from '@/models/Todo';
-import type { Todo as TodoInterface } from '@/types/todo';
+import { NextRequest, NextResponse } from 'next/server';
+import { PrismaClient, TaskStatus } from '@prisma/client';
+import { TodosResponse, WhereClause } from '@/types/todo';
+import { getRedisClient } from '@/lib/redis';
 
-export async function GET(): Promise<NextResponse> {
+const prisma = new PrismaClient();
+const redis = getRedisClient();
+
+// Helper function to invalidate cache
+const invalidateCache = async (): Promise<void> => {
+  const keys = await redis.keys('todos:*');
+  if (keys.length > 0) {
+    await redis.del(keys);
+  }
+};
+
+export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
-    await dbConnect();
-    const todos = await Todo.find({}).sort({ createdAt: -1 });
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const search = searchParams.get('search') || '';
+    const status = searchParams.get('status') as TaskStatus | undefined;
+    const priority = searchParams.get('priority');
 
-    const transformedTodos = todos.map((todo) => ({
-      ...todo.toObject(),
-      id: todo._id.toString(),
-      _id: undefined,
-    }));
+    const skip = (page - 1) * limit;
 
-    return NextResponse.json(transformedTodos);
-  } catch (error: unknown) {
-    return NextResponse.json(
-      {
-        error: 'Failed to fetch todos',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+    // Build where clause based on search params
+    const where: WhereClause = {};
+    if (search) {
+      where.OR = [
+        { title: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+    if (status && Object.values(TaskStatus).includes(status)) {
+      where.status = status;
+    }
+    if (priority) {
+      where.priority = parseInt(priority);
+    }
+
+    // Try to get from cache first
+    const cacheKey = `todos:${page}:${limit}:${search}:${status}:${priority}`;
+    const cachedData = await redis.get(cacheKey);
+    if (cachedData) {
+      return NextResponse.json(JSON.parse(cachedData));
+    }
+
+    // If not in cache, fetch from database
+    const [todos, total] = await Promise.all([
+      prisma.task.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+      }),
+      prisma.task.count({ where }),
+    ]);
+
+    const response: TodosResponse = {
+      todos,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit),
+    };
+
+    // Cache the response
+    await redis.set(cacheKey, JSON.stringify(response), 'EX', 60); // Cache for 60 seconds
+
+    return NextResponse.json(response);
+  } catch (error) {
+    console.error('Error fetching todos:', error);
+    return NextResponse.json({ error: 'Failed to fetch todos' }, { status: 500 });
   }
 }
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const body = (await request.json()) as Omit<TodoInterface, 'id'>;
-    await dbConnect();
+    const body = await request.json();
+    const { title, description, status, priority } = body;
 
-    const todo = await Todo.create({
-      ...body,
-    });
-
-    const transformedTodo = {
-      ...todo.toObject(),
-      id: todo._id.toString(),
-      _id: undefined,
-    };
-
-    return NextResponse.json(transformedTodo, { status: 201 });
-  } catch (error: unknown) {
-    // Check for validation errors
-    if (error instanceof Error && error.name === 'ValidationError') {
-      return NextResponse.json(
-        {
-          error: 'Validation Error',
-          details: error.message,
-        },
-        { status: 400 }
-      );
+    if (!title) {
+      return NextResponse.json({ error: 'Title is required' }, { status: 400 });
     }
 
-    return NextResponse.json(
-      {
-        error: 'Failed to create todo',
-        details: error instanceof Error ? error.message : 'Unknown error',
+    const todo = await prisma.task.create({
+      data: {
+        title,
+        description,
+        status: status as TaskStatus,
+        priority: priority ?? 0,
       },
-      { status: 500 }
-    );
+    });
+
+    // Invalidate cache
+    await invalidateCache();
+
+    return NextResponse.json(todo);
+  } catch (error) {
+    console.error('Error creating todo:', error);
+    return NextResponse.json({ error: 'Failed to create todo' }, { status: 500 });
+  }
+}
+
+export async function PUT(request: NextRequest): Promise<NextResponse> {
+  try {
+    const body = await request.json();
+    const { id, title, description, status, priority } = body;
+
+    if (!id) {
+      return NextResponse.json({ error: 'Todo ID is required' }, { status: 400 });
+    }
+
+    const todo = await prisma.task.update({
+      where: { id },
+      data: {
+        title,
+        description,
+        status: status as TaskStatus,
+        priority,
+      },
+    });
+
+    // Invalidate cache
+    await invalidateCache();
+
+    return NextResponse.json(todo);
+  } catch (error) {
+    console.error('Error updating todo:', error);
+    return NextResponse.json({ error: 'Failed to update todo' }, { status: 500 });
+  }
+}
+
+export async function DELETE(request: NextRequest): Promise<NextResponse> {
+  try {
+    const { searchParams } = new URL(request.url);
+    const id = searchParams.get('id');
+
+    if (!id) {
+      return NextResponse.json({ error: 'Todo ID is required' }, { status: 400 });
+    }
+
+    await prisma.task.delete({
+      where: { id },
+    });
+
+    // Invalidate cache
+    await invalidateCache();
+
+    return NextResponse.json({ message: 'Todo deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting todo:', error);
+    return NextResponse.json({ error: 'Failed to delete todo' }, { status: 500 });
   }
 }

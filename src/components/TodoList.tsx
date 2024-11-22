@@ -18,7 +18,7 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
 
   const startEdit = (todo: Todo) => {
     setEditingId(todo.id);
-    setEditText(todo.text);
+    setEditText(todo.title);
   };
 
   const cancelEdit = () => {
@@ -28,7 +28,7 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
 
   const saveEdit = (id: string) => {
     if (editText.trim()) {
-      onUpdate(id, { text: editText });
+      onUpdate(id, { title: editText });
     }
     cancelEdit();
   };
@@ -44,7 +44,7 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
   if (viewMode === 'list') {
     return (
       <div className="space-y-2">
-        {todos.map((todo) => (
+        {todos?.map((todo) => (
           <div
             key={todo.id}
             className="flex items-center justify-between bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow"
@@ -66,7 +66,7 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
                 />
               ) : (
                 <span className={`flex-1 ${todo.completed ? 'line-through text-gray-500' : ''}`}>
-                  {todo.text}
+                  {todo.title}
                 </span>
               )}
             </div>
@@ -89,14 +89,17 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
               ) : (
                 <>
                   <button
-                    onClick={() => onUpdate(todo.id, { important: !todo.important })}
+                    onClick={() => onUpdate(todo.id, { priority: todo.priority === 1 ? 0 : 1 })}
                     className={`px-3 py-1 ${
-                      todo.important
+                      todo.priority === 1
                         ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
                         : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     } rounded`}
                   >
-                    <Star className="h-5 w-5" fill={todo.important ? 'currentColor' : 'none'} />
+                    <Star
+                      className="h-5 w-5"
+                      fill={todo.priority === 1 ? 'currentColor' : 'none'}
+                    />
                   </button>
                   <button
                     onClick={() => startEdit(todo)}
@@ -121,7 +124,7 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {todos.map((todo) => (
+      {todos?.map((todo) => (
         <div
           key={todo.id}
           className="bg-white p-4 rounded-lg shadow hover:shadow-md transition-shadow"
@@ -135,14 +138,14 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
             />
             <div className="flex items-center space-x-2">
               <button
-                onClick={() => onUpdate(todo.id, { important: !todo.important })}
+                onClick={() => onUpdate(todo.id, { priority: todo.priority === 1 ? 0 : 1 })}
                 className={`px-3 py-1 ${
-                  todo.important
+                  todo.priority === 1
                     ? 'bg-yellow-50 text-yellow-600 hover:bg-yellow-100'
                     : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                 } rounded`}
               >
-                <Star className="h-5 w-5" fill={todo.important ? 'currentColor' : 'none'} />
+                <Star className="h-5 w-5" fill={todo.priority === 1 ? 'currentColor' : 'none'} />
               </button>
               <button
                 onClick={() => startEdit(todo)}
@@ -183,7 +186,7 @@ export default function TodoList({ todos, onUpdate, onDelete, viewMode, loading 
               </div>
             </div>
           ) : (
-            <p className={`${todo.completed ? 'line-through text-gray-500' : ''}`}>{todo.text}</p>
+            <p className={`${todo.completed ? 'line-through text-gray-500' : ''}`}>{todo.title}</p>
           )}
           <div className="mt-4 flex items-center text-sm text-gray-500">
             <Calendar className="h-4 w-4 mr-1" />
