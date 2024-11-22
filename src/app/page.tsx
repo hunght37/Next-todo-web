@@ -17,12 +17,27 @@ export default function Home() {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [isAddTaskOpen, setIsAddTaskOpen] = useState(false);
   const [newTask, setNewTask] = useState({ title: '', description: '' });
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
+  // Fetch todos from API when component mounts
   useEffect(() => {
-    const handleOpenAddTask = () => setIsAddTaskOpen(true);
-    window.addEventListener('openAddTask', handleOpenAddTask);
-    return () => window.removeEventListener('openAddTask', handleOpenAddTask);
+    fetchTodos();
   }, []);
+
+  const fetchTodos = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch('/api/todos');
+      if (!response.ok) throw new Error('Failed to fetch todos');
+      const data = await response.json();
+      setTodos(data);
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while fetching todos');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   // Filter todos based on current filter
   const filteredTodos = todos.filter(todo => {
@@ -32,112 +47,204 @@ export default function Home() {
   });
 
   // Add new todo
-  const addTodo = (e: React.FormEvent) => {
+  const addTodo = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTodo.trim()) return;
 
-    const todo: Todo = {
-      id: Date.now().toString(),
-      title: newTodo.trim(),
-      completed: false,
-      priority: newTodoPriority,
-      deadline: newTodoDeadline,
-      subtasks: [],
-    };
+    try {
+      const todo = {
+        title: newTodo.trim(),
+        description: '',
+        completed: false,
+        priority: newTodoPriority,
+        deadline: newTodoDeadline,
+      };
 
-    setTodos(prev => [todo, ...prev]);
-    setNewTodo('');
-    setNewTodoPriority('medium');
-    setNewTodoDeadline('');
-    setIsAddingTask(false);
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(todo),
+      });
+
+      if (!response.ok) throw new Error('Failed to create todo');
+      
+      const newTodoFromDB = await response.json();
+      setTodos(prev => [newTodoFromDB, ...prev]);
+      setNewTodo('');
+      setNewTodoPriority('medium');
+      setNewTodoDeadline('');
+      setIsAddingTask(false);
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while creating todo');
+    }
   };
 
   // Toggle todo completion
-  const toggleTodo = (id: string) => {
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === id ? { ...todo, completed: !todo.completed } : todo
-      )
-    );
+  const toggleTodo = async (id: string) => {
+    try {
+      const todo = todos.find(t => t.id === id);
+      if (!todo) return;
+
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed: !todo.completed }),
+      });
+
+      if (!response.ok) throw new Error('Failed to update todo');
+      
+      const updatedTodo = await response.json();
+      setTodos(prev =>
+        prev.map(todo => todo.id === id ? updatedTodo : todo)
+      );
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while updating todo');
+    }
   };
 
   // Delete todo
-  const deleteTodo = (id: string) => {
-    setTodos(prev => prev.filter(todo => todo.id !== id));
+  const deleteTodo = async (id: string) => {
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete todo');
+      
+      setTodos(prev => prev.filter(todo => todo.id !== id));
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while deleting todo');
+    }
   };
 
   // Update todo
-  const updateTodo = (id: string, updates: Partial<Todo>) => {
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === id ? { ...todo, ...updates } : todo
-      )
-    );
+  const updateTodo = async (id: string, updates: Partial<Todo>) => {
+    try {
+      const response = await fetch(`/api/todos/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updates),
+      });
+
+      if (!response.ok) throw new Error('Failed to update todo');
+      
+      const updatedTodo = await response.json();
+      setTodos(prev =>
+        prev.map(todo => todo.id === id ? updatedTodo : todo)
+      );
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while updating todo');
+    }
   };
 
   // Add subtask
-  const addSubtask = (todoId: string, title: string) => {
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === todoId
-          ? {
-              ...todo,
-              subtasks: [
-                ...todo.subtasks,
-                { id: Date.now().toString(), title, completed: false }
-              ]
-            }
-          : todo
-      )
-    );
+  const addSubtask = async (todoId: string, title: string) => {
+    try {
+      const todo = todos.find(t => t.id === todoId);
+      if (!todo) return;
+
+      const updatedSubtasks = [
+        ...todo.subtasks,
+        { id: Date.now().toString(), title, completed: false }
+      ];
+
+      const response = await fetch(`/api/todos/${todoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subtasks: updatedSubtasks }),
+      });
+
+      if (!response.ok) throw new Error('Failed to add subtask');
+      
+      const updatedTodo = await response.json();
+      setTodos(prev =>
+        prev.map(todo => todo.id === todoId ? updatedTodo : todo)
+      );
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while adding subtask');
+    }
   };
 
   // Toggle subtask
-  const toggleSubtask = (todoId: string, subtaskId: string) => {
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === todoId
-          ? {
-              ...todo,
-              subtasks: todo.subtasks.map(st =>
-                st.id === subtaskId ? { ...st, completed: !st.completed } : st
-              )
-            }
-          : todo
-      )
-    );
+  const toggleSubtask = async (todoId: string, subtaskId: string) => {
+    try {
+      const todo = todos.find(t => t.id === todoId);
+      if (!todo) return;
+
+      const updatedSubtasks = todo.subtasks.map(st =>
+        st.id === subtaskId ? { ...st, completed: !st.completed } : st
+      );
+
+      const response = await fetch(`/api/todos/${todoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subtasks: updatedSubtasks }),
+      });
+
+      if (!response.ok) throw new Error('Failed to toggle subtask');
+      
+      const updatedTodo = await response.json();
+      setTodos(prev =>
+        prev.map(todo => todo.id === todoId ? updatedTodo : todo)
+      );
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while toggling subtask');
+    }
   };
 
   // Delete subtask
-  const deleteSubtask = (todoId: string, subtaskId: string) => {
-    setTodos(prev =>
-      prev.map(todo =>
-        todo.id === todoId
-          ? {
-              ...todo,
-              subtasks: todo.subtasks.filter(st => st.id !== subtaskId)
-            }
-          : todo
-      )
-    );
+  const deleteSubtask = async (todoId: string, subtaskId: string) => {
+    try {
+      const todo = todos.find(t => t.id === todoId);
+      if (!todo) return;
+
+      const updatedSubtasks = todo.subtasks.filter(st => st.id !== subtaskId);
+
+      const response = await fetch(`/api/todos/${todoId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subtasks: updatedSubtasks }),
+      });
+
+      if (!response.ok) throw new Error('Failed to delete subtask');
+      
+      const updatedTodo = await response.json();
+      setTodos(prev =>
+        prev.map(todo => todo.id === todoId ? updatedTodo : todo)
+      );
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while deleting subtask');
+    }
   };
 
-  const handleCreateTask = () => {
+  const handleCreateTask = async () => {
     if (!newTask.title.trim()) return;
 
-    const task: Todo = {
-      id: Date.now().toString(),
-      title: newTask.title,
-      description: newTask.description,
-      completed: false,
-      priority: 'medium',
-      deadline: '',
-      subtasks: []
-    };
+    try {
+      const task = {
+        title: newTask.title,
+        description: newTask.description,
+        completed: false,
+        priority: 'medium',
+        deadline: '',
+        subtasks: []
+      };
 
-    setTodos(prev => [task, ...prev]);
-    setNewTask({ title: '', description: '' });
-    setIsAddTaskOpen(false);
+      const response = await fetch('/api/todos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(task),
+      });
+
+      if (!response.ok) throw new Error('Failed to create task');
+      
+      const newTaskFromDB = await response.json();
+      setTodos(prev => [newTaskFromDB, ...prev]);
+      setNewTask({ title: '', description: '' });
+      setIsAddTaskOpen(false);
+    } catch (error: any) {
+      setError(error?.message || 'An error occurred while creating task');
+    }
   };
 
   const stats = {
@@ -146,159 +253,84 @@ export default function Home() {
     active: todos.filter(t => !t.completed).length,
   };
 
+  if (isLoading) return <div>Loading...</div>;
+  if (error) return <div>Error: {error}</div>;
+
   return (
-    <div>
-      {/* Header Actions */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            {filter === 'all' ? 'All Tasks' : 
-             filter === 'active' ? 'Active Tasks' : 
-             'Completed Tasks'}
-          </h2>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            {stats.total} total · {stats.completed} completed · {stats.active} active
-          </div>
+    <div className="container mx-auto px-4 py-8">
+      {/* Header with stats and controls */}
+      <div className="flex justify-between items-center mb-8">
+        <div className="flex space-x-4">
+          <div className="text-sm">Total: {stats.total}</div>
+          <div className="text-sm">Active: {stats.active}</div>
+          <div className="text-sm">Completed: {stats.completed}</div>
         </div>
-        <div className="flex items-center space-x-2">
-          <div className="relative">
-            <button
-              onClick={() => setFilter(prev => 
-                prev === 'all' ? 'active' : 
-                prev === 'active' ? 'completed' : 'all'
-              )}
-              className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-              title="Filter tasks"
-            >
-              <FunnelIcon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
-            </button>
-          </div>
-          <button
-            onClick={() => setViewMode(prev => prev === 'grid' ? 'list' : 'grid')}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-full"
-            title="Change view"
+        <div className="flex space-x-4">
+          <select
+            value={filter}
+            onChange={(e) => setFilter(e.target.value as 'all' | 'active' | 'completed')}
+            className="px-3 py-1 border rounded"
           >
-            <Bars4Icon className="w-5 h-5 text-gray-600 dark:text-gray-300" />
+            <option value="all">All</option>
+            <option value="active">Active</option>
+            <option value="completed">Completed</option>
+          </select>
+          <button
+            onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
+            className="p-2 hover:bg-gray-100 rounded"
+          >
+            {viewMode === 'grid' ? <Bars4Icon className="w-5 h-5" /> : <FunnelIcon className="w-5 h-5" />}
           </button>
         </div>
       </div>
-
-      {/* Add Task Form */}
-      {isAddingTask && (
-        <form onSubmit={addTodo} className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-4 space-y-4">
-          <input
-            type="text"
-            value={newTodo}
-            onChange={(e) => setNewTodo(e.target.value)}
-            placeholder="Task title"
-            className="w-full rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-            autoFocus
-          />
-          <div className="flex gap-4">
-            <select
-              value={newTodoPriority}
-              onChange={(e) => setNewTodoPriority(e.target.value as Priority)}
-              className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="high">High Priority</option>
-              <option value="medium">Medium Priority</option>
-              <option value="low">Low Priority</option>
-            </select>
-            <input
-              type="date"
-              value={newTodoDeadline}
-              onChange={(e) => setNewTodoDeadline(e.target.value)}
-              className="rounded border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
-          <div className="flex justify-end space-x-2">
-            <button
-              type="button"
-              onClick={() => setIsAddingTask(false)}
-              className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 dark:bg-gray-700 dark:text-gray-300 dark:hover:bg-gray-600"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
-            >
-              Add Task
-            </button>
-          </div>
-        </form>
-      )}
-
+  
+      {/* Add Task Button */}
+      <button
+        onClick={() => setIsAddTaskOpen(true)}
+        className="mb-8 flex items-center px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+      >
+        <PlusIcon className="w-5 h-5 mr-2" />
+        Add Task
+      </button>
+  
       {/* Tasks Grid/List */}
-      <div className={viewMode === 'grid' ? 
-        "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" : 
-        "space-y-4"
-      }>
-        {filteredTodos.map(todo => (
+      <div className={`grid ${viewMode === 'grid' ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4' : 'grid-cols-1 gap-2'}`}>
+        {filteredTodos.map((todo) => (
           <TodoItem
             key={todo.id}
             todo={todo}
-            onToggle={toggleTodo}
-            onDelete={deleteTodo}
-            onUpdate={updateTodo}
-            onAddSubtask={addSubtask}
-            onToggleSubtask={toggleSubtask}
-            onDeleteSubtask={deleteSubtask}
+            onToggle={() => toggleTodo(todo.id)}
+            onDelete={() => deleteTodo(todo.id)}
+            onUpdate={(id: string, updates: Partial<Todo>) => updateTodo(id, updates)}
+            onAddSubtask={(title) => addSubtask(todo.id, title)}
+            onToggleSubtask={(subtaskId) => toggleSubtask(todo.id, subtaskId)}
+            onDeleteSubtask={(subtaskId) => deleteSubtask(todo.id, subtaskId)}
           />
         ))}
       </div>
-
-      {/* Empty State */}
-      {filteredTodos.length === 0 && (
-        <div className="text-center py-12">
-          <div className="mb-4">
-            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-            </svg>
-          </div>
-          <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No tasks</h3>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-            Get started by creating a new task
-          </p>
-          <div className="mt-6">
-            <button
-              onClick={() => setIsAddingTask(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              <PlusIcon className="-ml-1 mr-2 h-5 w-5" aria-hidden="true" />
-              New Task
-            </button>
-          </div>
-        </div>
-      )}
-
+  
+      {/* Add Task Dialog */}
       <Dialog
         open={isAddTaskOpen}
         onClose={() => setIsAddTaskOpen(false)}
-        className="relative z-50"
+        className="fixed inset-0 z-10 overflow-y-auto"
       >
-        {/* The backdrop, rendered as a fixed sibling to the panel container */}
-        <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
-
-        {/* Full-screen container to center the panel */}
-        <div className="fixed inset-0 flex items-center justify-center p-4">
-          <Dialog.Panel className="relative bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
-            <div className="absolute top-4 right-4">
-              <button
-                onClick={() => setIsAddTaskOpen(false)}
-                className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-300"
-              >
-                <XMarkIcon className="h-6 w-6" />
-              </button>
-            </div>
-
-            <Dialog.Title className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-              Create New Task
-            </Dialog.Title>
-
+        <div className="flex items-center justify-center min-h-screen">
+        <div className="fixed inset-0 bg-black opacity-30" />
+  
+          <div className="relative bg-white rounded-lg p-8 max-w-md w-full mx-4">
+            <button
+              onClick={() => setIsAddTaskOpen(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-500"
+            >
+              <XMarkIcon className="w-6 h-6" />
+            </button>
+  
+            <Dialog.Title className="text-lg font-medium mb-4">Add New Task</Dialog.Title>
+  
             <div className="space-y-4">
               <div>
-                <label htmlFor="title" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="title" className="block text-sm font-medium text-gray-700">
                   Title
                 </label>
                 <input
@@ -306,41 +338,41 @@ export default function Home() {
                   id="title"
                   value={newTask.title}
                   onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                   placeholder="Enter task title"
                 />
               </div>
-
+  
               <div>
-                <label htmlFor="description" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label htmlFor="description" className="block text-sm font-medium text-gray-700">
                   Description
                 </label>
                 <textarea
                   id="description"
                   value={newTask.description}
                   onChange={(e) => setNewTask({ ...newTask, description: e.target.value })}
+                  className="mt-1 block w-full border rounded-md shadow-sm py-2 px-3"
                   rows={3}
-                  className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                   placeholder="Enter task description"
                 />
               </div>
-
+  
               <div className="flex justify-end space-x-3">
                 <button
                   onClick={() => setIsAddTaskOpen(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                  className="px-4 py-2 border rounded text-gray-700 hover:bg-gray-50"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleCreateTask}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
                 >
-                  Create
+                  Create Task
                 </button>
               </div>
             </div>
-          </Dialog.Panel>
+          </div>
         </div>
       </Dialog>
     </div>

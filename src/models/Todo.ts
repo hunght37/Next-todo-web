@@ -1,5 +1,20 @@
 import mongoose from 'mongoose';
 
+const SubTaskSchema = new mongoose.Schema({
+  id: {
+    type: String,
+    required: true,
+  },
+  title: {
+    type: String,
+    required: true,
+  },
+  completed: {
+    type: Boolean,
+    default: false,
+  },
+});
+
 const TodoSchema = new mongoose.Schema({
   title: {
     type: String,
@@ -13,6 +28,19 @@ const TodoSchema = new mongoose.Schema({
   completed: {
     type: Boolean,
     default: false,
+  },
+  priority: {
+    type: String,
+    enum: ['high', 'medium', 'low'],
+    default: 'medium',
+  },
+  deadline: {
+    type: String,
+    required: false,
+  },
+  subtasks: {
+    type: [SubTaskSchema],
+    default: [],
   },
   createdAt: {
     type: Date,

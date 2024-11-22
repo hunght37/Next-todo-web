@@ -49,10 +49,10 @@ export default function TodoItem({
     }
   };
 
-  const completedSubtasks = todo.subtasks.filter(st => st.completed).length;
-  const totalSubtasks = todo.subtasks.length;
+  const subtasks = todo.subtasks || [];
+  const completedSubtasks = subtasks.filter(st => st.completed).length;
+  const totalSubtasks = subtasks.length;
   const progress = totalSubtasks > 0 ? (completedSubtasks / totalSubtasks) * 100 : 0;
-
   return (
     <>
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm hover:shadow-md transition-shadow duration-200 p-4 border border-gray-200 dark:border-gray-700">
@@ -79,7 +79,7 @@ export default function TodoItem({
                   todo.priority === 'medium' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' :
                   'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
                 }`}>
-                  {todo.priority.charAt(0).toUpperCase() + todo.priority.slice(1)} Priority
+                  {(todo.priority || 'medium').charAt(0).toUpperCase() + (todo.priority || 'medium').slice(1)} Priority
                 </span>
                 {todo.deadline && (
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
@@ -106,8 +106,8 @@ export default function TodoItem({
         </div>
 
         {/* Subtasks Section */}
-        {(todo.subtasks.length > 0 || newSubtask) && (
-          <div className="mt-4 space-y-3">
+        {((todo.subtasks || []).length > 0 || newSubtask) && (
+                 <div className="mt-4 space-y-3">
             {/* Progress Bar */}
             <div className="space-y-1">
               <div className="h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">

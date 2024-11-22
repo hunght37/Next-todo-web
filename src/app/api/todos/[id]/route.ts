@@ -12,7 +12,12 @@ export async function GET(
     if (!todo) {
       return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
     }
-    return NextResponse.json(todo);
+    const transformedTodo = {
+      ...todo.toObject(),
+      id: todo._id.toString(),
+      _id: undefined
+    };
+    return NextResponse.json(transformedTodo);
   } catch (error) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
@@ -32,7 +37,12 @@ export async function PUT(
     if (!todo) {
       return NextResponse.json({ error: 'Todo not found' }, { status: 404 });
     }
-    return NextResponse.json(todo);
+    const transformedTodo = {
+      ...todo.toObject(),
+      id: todo._id.toString(),
+      _id: undefined
+    };
+    return NextResponse.json(transformedTodo);
   } catch (error) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
