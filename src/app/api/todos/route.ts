@@ -33,9 +33,6 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const todo = await Todo.create({
       ...body,
-      subtasks: body.subtasks || [],
-      priority: body.priority || 'medium',
-      deadline: body.deadline || null,
     });
 
     const transformedTodo = {

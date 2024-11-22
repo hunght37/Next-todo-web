@@ -1,52 +1,20 @@
 import mongoose from 'mongoose';
 
-const SubTaskSchema = new mongoose.Schema({
-  id: {
-    type: String,
-    required: true,
-  },
-  title: {
-    type: String,
-    required: true,
-  },
-  completed: {
-    type: Boolean,
-    default: false,
-  },
-});
-
 const TodoSchema = new mongoose.Schema({
-  title: {
+  text: {
     type: String,
-    required: [true, 'Please provide a title for this todo.'],
-    maxlength: [60, 'Title cannot be more than 60 characters'],
-  },
-  description: {
-    type: String,
-    required: false,
+    required: [true, 'Please provide a text for this todo.'],
+    maxlength: [60, 'Text cannot be more than 60 characters'],
   },
   completed: {
     type: Boolean,
     default: false,
   },
-  priority: {
-    type: String,
-    enum: ['high', 'medium', 'low'],
-    default: 'medium',
-  },
-  deadline: {
-    type: String,
-    required: false,
-  },
-  subtasks: {
-    type: [SubTaskSchema],
-    default: [],
+  important: {
+    type: Boolean,
+    default: false,
   },
   createdAt: {
-    type: Date,
-    default: Date.now,
-  },
-  updatedAt: {
     type: Date,
     default: Date.now,
   },

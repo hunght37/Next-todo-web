@@ -1,0 +1,25 @@
+### Get all todos
+GET http://localhost:3000/api/todos
+
+### Create a new todo
+POST http://localhost:3000/api/todos
+Content-Type: application/json
+
+{
+  "text": "Test todo item",
+  "completed": false,
+  "important": true,
+  "createdAt": "2024-01-17T10:00:00.000Z"
+}
+
+### Search todos
+GET http://localhost:3000/api/todos/search?q=test&status=active&page=1&limit=10
+
+### Search completed todos
+GET http://localhost:3000/api/todos/search?status=completed
+
+### Search important todos
+GET http://localhost:3000/api/todos/search?important=true
+
+### Search with date range
+GET http://localhost:3000/api/todos/search?startDate=2024-01-01&endDate=2024-12-31

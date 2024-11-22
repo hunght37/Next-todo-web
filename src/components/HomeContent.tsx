@@ -6,7 +6,7 @@ import TodoList from '@/components/TodoList';
 import type { Todo } from '@/types/todo';
 import { List, Grid } from 'lucide-react';
 
-const HomeContent = () => {
+export default function HomeContent() {
   const [todos, setTodos] = useState<Todo[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,58 +69,40 @@ const HomeContent = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-blue-600 border-t-transparent"></div>
-          <p className="mt-2 text-gray-600">Loading todos...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <main className="ml-64 mt-16 p-8">
-      <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-2xl font-bold">All Tasks</h2>
-        <div className="flex items-center space-x-2">
+    <main className="container mx-auto p-4">
+      <div className="mb-8">
+        <TodoForm onSubmit={handleAddTodo} />
+      </div>
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-2xl font-bold">Todo List</h2>
+        <div className="flex gap-2">
           <button
             onClick={() => setViewMode('list')}
-            className={`p-2 rounded-lg ${
-              viewMode === 'list' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+            className={`p-2 rounded ${
+              viewMode === 'list' ? 'bg-blue-500 text-white' : 'bg-gray-200'
             }`}
           >
-            <List className="h-5 w-5" />
+            <List size={20} />
           </button>
           <button
             onClick={() => setViewMode('grid')}
-            className={`p-2 rounded-lg ${
-              viewMode === 'grid' ? 'bg-blue-50 text-blue-600' : 'text-gray-600 hover:bg-gray-100'
+            className={`p-2 rounded ${
+              viewMode === 'grid' ? 'bg-blue-500 text-white' : 'bg-gray-200'
             }`}
           >
-            <Grid className="h-5 w-5" />
+            <Grid size={20} />
           </button>
         </div>
       </div>
-      {error && <div className="mb-4 rounded bg-red-100 p-4 text-red-700">{error}</div>}
-      <TodoForm onSubmit={handleAddTodo} />
+      {error && <div className="text-red-500 mb-4">{error}</div>}
       <TodoList
         todos={todos}
+        loading={loading}
         onUpdate={handleUpdateTodo}
         onDelete={handleDeleteTodo}
         viewMode={viewMode}
       />
     </main>
-  );
-};
-
-import ClientWrapper from '@/components/ClientWrapper';
-
-export default function Home() {
-  return (
-    <ClientWrapper>
-      <HomeContent />
-    </ClientWrapper>
   );
 }
