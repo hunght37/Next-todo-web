@@ -97,7 +97,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       data: {
         title,
         description,
-        status: status && isValidTaskStatus(status) ? status : TaskStatus.PENDING,
+        status: status && isValidTaskStatus(status) ? status : 'PENDING',
         priority: priority ?? 0,
       },
     });
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest): Promise<NextResponse> {
       data: {
         title,
         description,
-        status: status && isValidTaskStatus(status) ? status : undefined,
+        ...(status && isValidTaskStatus(status) ? { status } : {}),
         priority,
       },
     });
