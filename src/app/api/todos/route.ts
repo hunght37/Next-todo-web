@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient, TaskStatus } from '@prisma/client';
-import { TodosResponse, WhereClause } from '@/types/todo';
+import { TodosResponse, WhereClause, Todo } from '@/types/todo';
 import { getRedisClient } from '@/lib/redis';
 
 const prisma = new PrismaClient();
@@ -19,11 +19,48 @@ const invalidateCache = async (): Promise<void> => {
   }
 };
 
+// Helper function to handle Redis operations with fallback
+interface CacheData {
+  todos: Todo[];
+  total: number;
+  page: number;
+  totalPages: number;
+}
+
+const getCachedData = async (key: string): Promise<string | null> => {
+  try {
+    return await redis.get(key);
+  } catch (error) {
+    console.warn('Redis error:', error);
+    return null;
+  }
+};
+
+const setCachedData = async (key: string, data: CacheData, expireTime = 60): Promise<void> => {
+  try {
+    await redis.set(key, JSON.stringify(data), 'EX', expireTime);
+  } catch (error) {
+    console.warn('Redis error:', error);
+  }
+};
+
+// Validate request parameters
+const validateRequestParams = (params: URLSearchParams): { page: number; limit: number } => {
+  const page = Math.max(1, parseInt(params.get('page') || '1'));
+  const limit = Math.min(100, Math.max(1, parseInt(params.get('limit') || '10')));
+  const priority = params.get('priority');
+
+  if (priority && isNaN(parseInt(priority))) {
+    throw new Error('Invalid priority value');
+  }
+
+  return { page, limit };
+};
+
 export async function GET(request: NextRequest): Promise<NextResponse> {
   try {
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
+    const { page, limit } = validateRequestParams(searchParams);
     const search = searchParams.get('search') || '';
     const statusParam = searchParams.get('status');
     const priority = searchParams.get('priority');
@@ -45,24 +82,28 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       where.priority = parseInt(priority);
     }
 
-    // Try to get from cache first
+    // Try to get from cache with fallback
     const cacheKey = `todos:${page}:${limit}:${search}:${statusParam}:${priority}`;
-    const cachedData = await redis.get(cacheKey);
+    const cachedData = await getCachedData(cacheKey);
     if (cachedData) {
       return NextResponse.json(JSON.parse(cachedData));
     }
 
-    // If not in cache, fetch from database
-    const [todos, total] = await Promise.all([
-      prisma.task.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { updatedAt: 'desc' },
-      }),
-      prisma.task.count({ where }),
-    ]);
+    // Use transaction for consistent reads
+    const result = await prisma.$transaction(async (tx) => {
+      const [todos, total] = await Promise.all([
+        tx.task.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { updatedAt: 'desc' },
+        }),
+        tx.task.count({ where }),
+      ]);
+      return { todos, total };
+    });
 
+    const { todos, total } = result;
     const totalPages = Math.ceil(total / limit);
     const response: TodosResponse = {
       todos,
@@ -71,19 +112,21 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
       totalPages,
     };
 
-    // Cache the response
-    await redis.set(cacheKey, JSON.stringify(response), 'EX', 60);
+    // Cache with shorter expiration for frequently changing data
+    await setCachedData(cacheKey, response, 30);
 
     return NextResponse.json(response);
   } catch (error) {
     console.error('Error in GET /api/todos:', error);
-    return NextResponse.json(
-      {
-        error: 'Internal Server Error',
-        details: error instanceof Error ? error.message : 'Unknown error',
-      },
-      { status: 500 }
-    );
+
+    if (error instanceof Error) {
+      if (error.message === 'Invalid priority value') {
+        return NextResponse.json({ error: 'Invalid priority parameter' }, { status: 400 });
+      }
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
 

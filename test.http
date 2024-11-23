@@ -1,25 +1,142 @@
-### Get all todos
+# API Tests for Todo Application
+
+### Get all todos (Default pagination)
 GET http://localhost:3000/api/todos
 
-### Create a new todo
+### Get todos with pagination
+GET http://localhost:3000/api/todos?page=1&limit=5
+
+### Get todos with search
+GET http://localhost:3000/api/todos?search=test
+
+### Get todos by status
+GET http://localhost:3000/api/todos?status=PENDING
+
+### Get todos by priority
+GET http://localhost:3000/api/todos?priority=1
+
+### Get todos with multiple filters
+GET http://localhost:3000/api/todos?status=PENDING&priority=1&search=test
+
+### Create a new todo (minimal)
 POST http://localhost:3000/api/todos
 Content-Type: application/json
 
 {
-  "text": "Test todo item",
-  "completed": false,
-  "important": true,
-  "createdAt": "2024-01-17T10:00:00.000Z"
+  "title": "Simple test todo"
 }
 
-### Search todos
-GET http://localhost:3000/api/todos/search?q=test&status=active&page=1&limit=10
+### Create a new todo (full details)
+POST http://localhost:3000/api/todos
+Content-Type: application/json
 
-### Search completed todos
-GET http://localhost:3000/api/todos/search?status=completed
+{
+  "title": "Complete API testing",
+  "description": "Add comprehensive test cases for the API",
+  "priority": 2,
+  "status": "IN_PROGRESS"
+}
 
-### Search important todos
-GET http://localhost:3000/api/todos/search?important=true
+### Create an invalid todo (should fail)
+POST http://localhost:3000/api/todos
+Content-Type: application/json
 
-### Search with date range
-GET http://localhost:3000/api/todos/search?startDate=2024-01-01&endDate=2024-12-31
+{
+  "description": "Missing required title field"
+}
+
+### Update a todo (replace ID with actual todo ID)
+PUT http://localhost:3000/api/todos/[todo-id]
+Content-Type: application/json
+
+{
+  "title": "Updated todo title",
+  "status": "COMPLETED"
+}
+
+### Update todo status only
+PUT http://localhost:3000/api/todos/[todo-id]
+Content-Type: application/json
+
+{
+  "status": "COMPLETED"
+}
+
+### Update todo priority only
+PUT http://localhost:3000/api/todos/[todo-id]
+Content-Type: application/json
+
+{
+  "priority": 3
+}
+
+### Delete a todo (replace ID with actual todo ID)
+DELETE http://localhost:3000/api/todos/[todo-id]
+
+### Invalid requests for error handling testing
+
+### Get todos with invalid page number
+GET http://localhost:3000/api/todos?page=-1
+
+### Get todos with invalid limit
+GET http://localhost:3000/api/todos?limit=1000
+
+### Get todos with invalid status
+GET http://localhost:3000/api/todos?status=INVALID_STATUS
+
+### Get todos with invalid priority
+GET http://localhost:3000/api/todos?priority=invalid
+
+### Create todo with invalid status
+POST http://localhost:3000/api/todos
+Content-Type: application/json
+
+{
+  "title": "Test todo",
+  "status": "INVALID_STATUS"
+}
+
+### Create todo with invalid priority
+POST http://localhost:3000/api/todos
+Content-Type: application/json
+
+{
+  "title": "Test todo",
+  "priority": "not_a_number"
+}
+
+### Update todo with invalid data
+PUT http://localhost:3000/api/todos/[todo-id]
+Content-Type: application/json
+
+{
+  "status": "INVALID_STATUS",
+  "priority": "invalid"
+}
+
+### Performance testing
+
+### Get todos with maximum allowed limit
+GET http://localhost:3000/api/todos?limit=100
+
+### Search with long query
+GET http://localhost:3000/api/todos?search=this+is+a+very+long+search+query+to+test+performance
+
+### Create todo with long description
+POST http://localhost:3000/api/todos
+Content-Type: application/json
+
+{
+  "title": "Long description test",
+  "description": "This is a very long description to test how the API handles large amounts of text. It should be able to handle reasonable amounts of text without any issues. We want to make sure that the API can process and store longer descriptions efficiently."
+}
+
+### Batch operations testing
+
+### Get multiple pages
+GET http://localhost:3000/api/todos?page=1&limit=10
+GET http://localhost:3000/api/todos?page=2&limit=10
+GET http://localhost:3000/api/todos?page=3&limit=10
+
+### Complex filtering
+GET http://localhost:3000/api/todos?status=IN_PROGRESS&priority=2&search=test&page=1&limit=5
